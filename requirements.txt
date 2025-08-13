@@ -6,8 +6,5 @@ pandas==2.2.2
 plotly==5.23.0
 kaleido==0.2.1
 python-dateutil==2.9.0.post0
-reportlab==4.2.2
-
-# Pins to satisfy Streamlit 1.37.1
 packaging==24.2
 tenacity==8.2.3
