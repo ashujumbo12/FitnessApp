@@ -1,0 +1,16 @@
+/* style.css — minimal placeholder to avoid 'not found' warnings.
+   No visual changes. Safe, empty hooks only. */
+
+/* KPI card hooks used by pages */
+.card.kpi {}
+.card.kpi .label {}
+.card.kpi .value {}
+
+/* Plotly chart container */
+.stPlotlyChart {}
+
+/* DataFrame/table container */
+.stDataFrame {}
+
+/* Generic container */
+.stContainer {}

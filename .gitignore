@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.streamlit/secrets.toml
+fitness_dashboard_app/data/fitness.db
+assets/*.pdf
+assets/*.png
+assets/*.jpg
