@@ -8,7 +8,7 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 engine = create_engine(f"sqlite:///{DB_PATH}", echo=False, connect_args={"check_same_thread": False})
 
 def init_db():
-    from models import User, DailyMetric, Measurement, Wellbeing, Adherence, Photo, Week  # ensure tables imported
+    from models import User, DailyMetric, Measurement, Wellbeing, Adherence, Photo, Week, Expense  # ensure tables imported
     SQLModel.metadata.create_all(engine)
 
 def get_session() -> Session:

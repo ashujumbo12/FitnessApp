@@ -107,3 +107,12 @@ class Photo(SQLModel, table=True):
     path: str
 
     week: Optional[Week] = Relationship(back_populates="photos")
+    
+# --- NEW: track health expenses ---------------------------------------------
+class Expense(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    date: date
+    amount: float = 0.0
+    category: str = "Other"     # e.g., Supplements, Coaching, Gym, Physio, Equipment, Tests, Other
+    note: Optional[str] = None

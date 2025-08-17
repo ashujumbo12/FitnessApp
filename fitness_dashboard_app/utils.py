@@ -160,3 +160,40 @@ def load_weekly_df(sess: Session, user_id: int) -> pd.DataFrame:
 def rolling_avg(series: pd.Series, window: int = 7) -> pd.Series:
     """7-day rolling average with graceful handling for short series."""
     return series.rolling(window=window, min_periods=1).mean()
+
+# ---- Expenses helpers -------------------------------------------------------
+from models import Expense
+
+DEFAULT_EXPENSE_CATEGORIES = [
+    "Supplements", "Coaching", "Gym", "Physio", "Equipment", "Tests", "Food/Meal Plan", "Other"
+]
+
+def load_expenses_df(sess: Session, user_id: int) -> pd.DataFrame:
+    rows = sess.exec(select(Expense).where(Expense.user_id == user_id)).all()
+    if not rows:
+        return pd.DataFrame(columns=["id","user_id","date","amount","category","note"])
+    df = pd.DataFrame([_to_dict(r) for r in rows])
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"])
+    return df
+
+def expense_metrics(df: pd.DataFrame) -> dict:
+    if df is None or df.empty:
+        return {
+            "total": 0.0,
+            "by_month": pd.DataFrame(columns=["month","amount"]),
+            "by_category": pd.DataFrame(columns=["category","amount"])
+        }
+    out = {}
+    out["total"] = float(df["amount"].sum())
+
+    d_month = df.copy()
+    d_month["month"] = d_month["date"].dt.to_period("M").dt.to_timestamp()
+    out["by_month"] = (
+        d_month.groupby("month", dropna=False)["amount"].sum().reset_index().sort_values("month")
+    )
+
+    out["by_category"] = (
+        df.groupby("category", dropna=False)["amount"].sum().reset_index().sort_values("amount", ascending=False)
+    )
+    return out

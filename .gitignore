@@ -8,3 +8,11 @@ fitness_dashboard_app/data/fitness.db
 assets/*.pdf
 assets/*.png
 assets/*.jpg
+
+# local env & cache
+.venv/
+venv/
+__pycache__/
+.streamlit/secrets.toml
+*.pyc
+*.DS_Store

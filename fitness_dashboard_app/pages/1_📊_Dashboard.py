@@ -5,7 +5,7 @@ import plotly.express as px
 from sqlmodel import select
 from db import get_session
 from models import User
-from utils import load_daily_df, load_weekly_df, rolling_avg, load_css
+from utils import load_daily_df, load_weekly_df, rolling_avg, load_expenses_df, expense_metrics, load_css
 
 st.set_page_config(page_title="📊 Progress Dashboard", page_icon="📊", layout="wide")
 load_css(show_warning=False)
@@ -45,6 +45,7 @@ with get_session() as sess:
     user = sess.exec(select(User)).first()
     daily_raw = load_daily_df(sess, user.id)
     weekly = load_weekly_df(sess, user.id)
+    expenses_df = load_expenses_df(sess, user.id)
 
 if daily_raw.empty:
     st.info("No data yet. Add entries in **📝 Data Entry**.")
@@ -140,6 +141,7 @@ with kpi[3]:
     good_days = int((daily_day["steps"] >= step_goal).sum()) if daily_day["steps"].notna().any() else 0
     st.markdown(f'<div class="value">{good_days}</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
+
 
 st.markdown("<br/>", unsafe_allow_html=True)
 
@@ -252,6 +254,47 @@ if not weekly_f.empty:
         cols = st.columns(len(row))
         for ci, fig in zip(cols, row):
             ci.plotly_chart(fig, use_container_width=True)
+
+# ---------- Expenses summary & charts ----------
+if 'expenses_df' in locals() and expenses_df is not None and not expenses_df.empty:
+    expm = expense_metrics(expenses_df)
+    # KPI: Total expenses till date
+    total_exp = 0.0
+    try:
+        total_exp = float(expm.get("total", 0.0))
+    except Exception:
+        total_exp = 0.0
+
+    kpi_exp = st.columns(1)
+    with kpi_exp[0]:
+        st.markdown('<div class="card kpi">', unsafe_allow_html=True)
+        st.markdown('<div class="label">Total Health Expenses</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="value">₹{total_exp:,.0f}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Charts: Month-on-month and category split
+    col_mom, col_cat = st.columns(2)
+
+    by_month = expm.get("by_month") if isinstance(expm, dict) else None
+    if isinstance(by_month, pd.DataFrame) and not by_month.empty:
+        # Expect columns: month (period/str) and amount (numeric)
+        bm = by_month.copy()
+        # Coerce to datetime for ordering if needed
+        if not pd.api.types.is_datetime64_any_dtype(bm.get("month")):
+            with pd.option_context('mode.chained_assignment', None):
+                try:
+                    bm["month"] = pd.to_datetime(bm["month"].astype(str))
+                except Exception:
+                    pass
+        fig_m = px.bar(bm, x="month", y="amount", title="Monthly Health Expenses")
+        fig_m.update_xaxes(dtick="M1", tickformat="%b %Y")
+        col_mom.plotly_chart(fig_m, use_container_width=True)
+
+    by_cat = expm.get("by_category") if isinstance(expm, dict) else None
+    if isinstance(by_cat, pd.DataFrame) and not by_cat.empty:
+        bc = by_cat.copy()
+        fig_c = px.pie(bc, names="category", values="amount", title="Expenses by Category")
+        col_cat.plotly_chart(fig_c, use_container_width=True)
 
 # ---------- Tables ----------
 if show_tables:
